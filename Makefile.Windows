@@ -1,0 +1,302 @@
+#############################################################
+#
+# Root Level Makefile
+#
+# (c) by CHERTS <sleuthhound@gmail.com>
+#
+#############################################################
+
+# *** if you change RBOOT_BIG_FLASH you must 'make clean' and build again
+RBOOT_BIG_FLASH ?= 1
+
+BUILD_BASE	= build
+FW_BASE		= firmware
+
+PYTHON  ?= C:\Python27\python.exe
+ROM1MEG ?= C:\espressif\utils\blank_1MB.bin
+
+UTILROMS ?= D:\Git\esp-mqtt-dev\firmware
+
+#WEBTOOL ?= c:\Espressif\utils\web_page_convert.py
+WEBTOOL ?= web_page_convert.py
+FIND    ?= find
+FLASH_OPTS ?= -fs 32m -ff 80m -fm qio
+
+# Base directory for the compiler
+XTENSA_TOOLS_ROOT ?= c:/Espressif/xtensa-lx106-elf/bin
+
+NEWSTUFF ?= c:/Espressif/esp8266_sdk/bin
+
+# base directory of the ESP8266 SDK package, absolute
+SDK_BASE	?= c:/Espressif/ESP8266_SDK
+SDK_TOOLS	?= c:/Espressif/utils
+
+#Extra Tensilica includes from the ESS VM
+SDK_EXTRA_INCLUDES ?= c:/Espressif/ESP8266_SDK/include
+SDK_EXTRA_LIBS ?= c:/Espressif/ESP8266_SDK/lib
+
+# esptool path and port
+ESPTOOL ?=c:/espressif/utils/esptool.exe
+ESPPORT ?=COM5
+ESPBAUD ?=230400
+ESPTOOL2 ?= C:/esptools/esptool2.exe
+
+#Position and maximum length of espfs in flash memory
+ESPFS_POS  = 0x70000
+ESPFS_SIZE = 0x08000
+
+#Static gzipping is disabled by default.
+GZIP_COMPRESSION ?= no
+
+#If USE_HEATSHRINK is set to "yes" then the espfs files will be compressed with Heatshrink and decompressed
+#on the fly while reading the file. Because the decompression is done in the esp8266, it does not require
+#any support in the browser.
+USE_HEATSHRINK ?= yes
+
+# name for the target project
+TARGET = app
+
+# which modules (subdirectories) of the project to include in compiling
+MODULES		= driver mqtt user softuart easygpio rboot/appcode
+
+EXTRA_INCDIR	= include $(SDK_BASE)/../include \
+		. \
+		lib/heatshrink/ \
+		mqtt \
+		$(SDK_EXTRA_INCLUDES)
+
+# various paths from the SDK used in this project
+SDK_LIBDIR	= lib
+SDK_LDDIR	= ld
+SDK_INCDIR	= include include/json
+
+
+# compiler flags
+CFLAGS = -w -Os -ggdb -std=c99 -Wpointer-arith -Wundef -Wall -Wl,-EL -fno-inline-functions \
+		-nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH -D_STDINT_H \
+		-Wno-address -DESPFS_POS=$(ESPFS_POS) -DESPFS_SIZE=$(ESPFS_SIZE)
+
+#CFLAGS = -w -Os -ggdb -std=gnu89 -Wpointer-arith -Wundef -Wall -Wl,-EL -fno-inline-functions \
+#		-nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH -D_STDINT_H \
+#		-Wno-address -DESPFS_POS=$(ESPFS_POS) -DESPFS_SIZE=$(ESPFS_SIZE)
+
+# linker flags used to generate the main object file
+LDFLAGS = -nostdlib -Wl,--no-check-sections -u Cache_Read_Enable_New, -u call_user_start -Wl,-static 
+
+# rBoot build support
+RBOOT_OUT_0 := $(addprefix $(BUILD_BASE)/,$(TARGET)_0.out)
+RBOOT_OUT_1 := $(addprefix $(BUILD_BASE)/,$(TARGET)_1.out)
+RBOOT_LD_0 ?= rom0
+RBOOT_LD_1 ?= rom1
+RBOOT_LD_0 := $(addprefix -T,$(RBOOT_LD_0).ld)
+RBOOT_LD_1 := $(addprefix -T,$(RBOOT_LD_1).ld)
+RBOOT_E2_SECTS     ?= .text .data .rodata
+RBOOT_E2_USER_ARGS ?= -quiet -bin -boot2
+RBOOT_BIN := $(FW_BASE)/rboot.bin
+RBOOT_BUILD_BASE := $(abspath $(BUILD_BASE))
+RBOOT_FW_BASE := $(abspath $(FW_BASE))
+EXTRA_INCDIR += rboot
+EXTRA_INCDIR += rboot/appcode
+# libmain must be modified for rBoot big flash support (just one symbol gets weakened)
+ifeq ($(RBOOT_BIG_FLASH),1)
+	LIBMAIN = main2
+	LIBMAIN_SRC = $(addprefix $(SDK_LIBDIR)/,libmain.a)
+	LIBMAIN_DST = $(addprefix $(BUILD_BASE)/,libmain2.a)
+	CFLAGS += -DBOOT_BIG_FLASH
+	LDFLAGS += -u Cache_Read_Enable_New
+	RBOOT_ROM_0 ?= romx
+	RBOOT_ROM_0 := $(addprefix $(FW_BASE)/,$(RBOOT_ROM_0).bin)
+	RBOOT_ROM_1 := $()
+	RBOOT_ROM_1 := $(addprefix $(FW_BASE)/,$(RBOOT_ROM_1).bin)
+else
+	LIBMAIN = main
+	LIBMAIN_DST = $()
+	RBOOT_ROM_0 ?= rom0
+	RBOOT_ROM_1 ?= rom1
+endif
+
+# these are exported for use by the rBoot Makefile
+export RBOOT_BIG_FLASH
+export RBOOT_BUILD_BASE
+export RBOOT_FW_BASE
+export ESPTOOL2
+export XTENSA_BINDIR = $(XTENSA_TOOLS_ROOT)
+
+# libraries used in this project, mainly provided by the SDK
+LIBS = c gcc hal phy pp net80211 lwip wpa pwm upgrade $(LIBMAIN) ssl crypto
+
+# select which tools to use as compiler, librarian and linker
+CC		:= $(XTENSA_TOOLS_ROOT)/xtensa-lx106-elf-gcc
+AR		:= $(XTENSA_TOOLS_ROOT)/xtensa-lx106-elf-ar
+LD		:= $(XTENSA_TOOLS_ROOT)/xtensa-lx106-elf-gcc
+OBJCOPY := $(XTENSA_TOOLS_ROOT)/xtensa-lx106-elf-objcopy
+OBJDUMP := $(XTENSA_TOOLS_ROOT)/xtensa-lx106-elf-objdump
+
+# no user configurable options below here
+SRC_DIR		:= $(MODULES)
+BUILD_DIR	:= $(addprefix $(BUILD_BASE)/,$(MODULES))
+
+SDK_LIBDIR	:= $(addprefix $(SDK_BASE)/,$(SDK_LIBDIR))
+SDK_INCDIR	:= $(addprefix -I$(SDK_BASE)/,$(SDK_INCDIR))
+
+SRC		:= $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.c))
+OBJ		:= $(patsubst %.c,$(BUILD_BASE)/%.o,$(SRC))
+LIBS		:= $(addprefix -l,$(LIBS))
+APP_AR		:= $(addprefix $(BUILD_BASE)/,$(TARGET)_app.a)
+TARGET_OUT	:= $(addprefix $(BUILD_BASE)/,$(TARGET).out)
+
+INCDIR	:= $(addprefix -I,$(SRC_DIR))
+EXTRA_INCDIR	:= $(addprefix -I,$(EXTRA_INCDIR))
+MODULE_INCDIR	:= $(addsuffix /include,$(INCDIR))
+
+ifeq ("$(GZIP_COMPRESSION)","yes")
+CFLAGS		+= -DGZIP_COMPRESSION
+endif
+
+ifeq ("$(USE_HEATSHRINK)","yes")
+CFLAGS		+= -DESPFS_HEATSHRINK
+endif
+
+ifneq ("$(WIFI_AP_NAME)", "")
+	CFLAGS += -DWIFI_AP_NAME=\"$(WIFI_AP_NAME)\"
+endif
+ifneq ("$(WIFI_AP_PASSWORD)", "")
+	CFLAGS += -DWIFI_AP_PASSWORD=\"$(WIFI_AP_PASSWORD)\"
+endif
+ifneq ("$(WIFI_CLIENTSSID)", "")
+	CFLAGS += -DWIFI_CLIENTSSID=\"$(WIFI_CLIENTSSID)\"
+endif
+ifneq ("$(WIFI_CLIENTPASSWORD)", "")
+	CFLAGS += -DWIFI_CLIENTPASSWORD=\"$(WIFI_CLIENTPASSWORD)\"
+endif
+
+ifneq ("$(MQTT_HOST)", "")
+	CFLAGS += -DMQTT_HOST=\"$(MQTT_HOST)\"
+endif
+ifneq ("$(MQTT_PORT)", "")
+	CFLAGS += -DMQTT_PORT=\"$(MQTT_PORT)\"
+endif
+ifneq ("$(MQTT_USER)", "")
+	CFLAGS += -DMQTT_USER=\"$(MQTT_USER)\"
+endif
+ifneq ("$(MQTT_PASS)", "")
+	CFLAGS += -DMQTT_PASS=\"$(MQTT_PASS)\"
+endif
+ifneq ("$(OTA_HOST)", "")
+	CFLAGS += -DOTA_HOST=\"$(OTA_HOST)\"
+endif
+ifneq ("$(OTA_PORT)", "")
+	CFLAGS += -DOTA_PORT=\"$(OTA_PORT)\"
+endif
+
+vpath %.c $(SRC_DIR)
+
+define compile-objects
+$1/%.o: %.c
+	@echo "CC $$<"
+	@$(CC) $(INCDIR) $(MODULE_INCDIR) $(EXTRA_INCDIR) $(SDK_INCDIR) $(CFLAGS)  -c $$< -o $$@
+endef
+
+.PHONY: all clean flash flashinit flashonefile htmlfiles 
+
+all: $(BUILD_DIR) $(FW_BASE) user/webpage.h $(RBOOT_BIN) $(LIBMAIN_DST) $(RBOOT_ROM_0) $(RBOOT_ROM_1)
+
+$(FW_BASE)/webpages.espfs: $(FW_BASE)
+
+
+$(RBOOT_BIN):
+	@$(MAKE) -C rboot
+
+$(LIBMAIN_DST): $(LIBMAIN_SRC)
+	@echo "OC $@"
+	@$(OBJCOPY) -W Cache_Read_Enable_New $^ $@
+
+$(RBOOT_ROM_0): $(RBOOT_OUT_0)
+	@echo "E2 $@"
+	@$(ESPTOOL2)  $(RBOOT_E2_USER_ARGS) $(RBOOT_OUT_0) $@ $(RBOOT_E2_SECTS)
+
+$(RBOOT_ROM_1): $(RBOOT_OUT_1)
+	@echo "E2 $@"
+	@$(ESPTOOL2) $(RBOOT_E2_USER_ARGS) $(RBOOT_OUT_1) $@ $(RBOOT_E2_SECTS)
+
+$(RBOOT_OUT_0): $(APP_AR)
+	@echo "LD $@"
+	@$(LD) -L$(BUILD_BASE) -L$(SDK_LIBDIR) $(RBOOT_LD_0) $(LDFLAGS) -Wl,--start-group $(APP_AR) $(LIBS) -Wl,--end-group -o $@
+	@echo "------------------------------------------------------------------------------"
+	@echo "Section info:"
+	@$(OBJDUMP) -h -j .data -j .rodata -j .bss -j .text -j .irom0.text $@
+	@echo "------------------------------------------------------------------------------"
+
+$(RBOOT_OUT_1): $(APP_AR)
+	@echo "LD $@"
+	@$(LD) -L$(BUILD_BASE) -L$(SDK_LIBDIR) $(RBOOT_LD_1) $(LDFLAGS) -Wl,--start-group $(APP_AR) $(LIBS) -Wl,--end-group -o $@
+
+user/webpage.h: $(FW_BASE)/webpages.espfs
+	$(PYTHON) $(WEBTOOL) $(FW_BASE)/webpages.espfs user/webpage.h
+
+$(FW_BASE)/webpages.espfs:
+	@echo "FS $@"
+	cd html; $(FIND) | ../mkespfsimage/mkespfsimage.exe > ../$@; cd ..
+
+$(APP_AR): $(OBJ)
+	@echo "AR $@"
+	@$(AR) cru $@ $^
+
+$(BUILD_DIR):
+	@mkdir -p $@
+
+$(FW_BASE):
+	@mkdir -p $@
+
+	if test -d  d:/Git/esp-mqtt-dev/firmware; \
+	then cp -f c:/Espressif/esp8266_sdk/bin/blank.bin	d:/Git/esp-mqtt-dev/firmware; \
+	cp -f c:/Espressif/esp8266_sdk/bin/esp_init_data_default.bin	 d:/Git/esp-mqtt-dev/firmware; \
+	fi
+	
+#	@cp -f c:/Espressif/esp8266_sdk/bin/blank.bin	D:\Git\esp-mqtt-dev\firmware
+#	@cp -f c:/Espressif/esp8266_sdk/bin/esp_init_data_default.bin	D:\Git\esp-mqtt-dev\firmware
+	
+wipe_all:
+	$(ESPTOOL) -p $(ESPPORT) -b $(ESPBAUD) erase_flash
+
+flash: all
+	$(PYTHON) dtr.py $(ESPPORT)
+	$(ESPTOOL) -p $(ESPPORT) -b $(ESPBAUD) write_flash $(FLASH_OPTS) 0x00000 $(RBOOT_BIN) 0x02000 $(RBOOT_ROM_0)
+
+init_blank: all
+	$(PYTHON) dtr.py $(ESPPORT)
+	$(ESPTOOL) -p $(ESPPORT) -b $(ESPBAUD) write_flash $(FLASH_OPTS) 0x3FE000 $(NEWSTUFF)/blank.bin
+
+init_data: all
+	$(PYTHON) dtr.py $(ESPPORT)
+	$(ESPTOOL) -p $(ESPPORT) -b $(ESPBAUD) write_flash $(FLASH_OPTS) 0x3FC000 $(NEWSTUFF)/esp_init_data_default.bin  
+
+
+flash_4MB_init: all
+	$(PYTHON) dtr.py $(ESPPORT)
+	$(ESPTOOL) -p $(ESPPORT) -b $(ESPBAUD) write_flash $(FLASH_OPTS) 0x00000 $(RBOOT_BIN) 0x02000 $(RBOOT_ROM_0)  0x3FE000 $(NEWSTUFF)/blank.bin 0x3FC000 $(NEWSTUFF)/esp_init_data_default.bin  
+
+flash_1MB_init: all
+	$(PYTHON) dtr.py $(ESPPORT)
+	$(ESPTOOL) -p $(ESPPORT) -b $(ESPBAUD) write_flash $(FLASH_OPTS) 0x00000 $(RBOOT_BIN) 0x02000 $(RBOOT_ROM_0)  0x0FE000 $(NEWSTUFF)/blank.bin 0x0FC000 $(NEWSTUFF)/esp_init_data_default.bin  
+
+flash_512K_init: all
+	$(PYTHON) dtr.py $(ESPPORT)
+	$(ESPTOOL) -p $(ESPPORT) -b $(ESPBAUD) write_flash $(FLASH_OPTS) 0x00000 $(RBOOT_BIN) 0x02000 $(RBOOT_ROM_0)  0x07E000 $(NEWSTUFF)/blank.bin 0x07C000 $(NEWSTUFF)/esp_init_data_default.bin  
+
+ota_store: 
+	$(PYTHON) $(SDK_TOOLS)/ftp_upload.py $(FW_BASE)/rboot.bin
+	$(PYTHON) $(SDK_TOOLS)/ftp_upload.py $(FW_BASE)/romx.bin	
+	
+
+
+clean:
+	@echo "RM $(BUILD_BASE)"
+	@rm -rf $(BUILD_BASE)
+	@echo "RM $(FW_BASE)"
+	@rm -rf $(FW_BASE)
+
+
+$(foreach bdir,$(BUILD_DIR),$(eval $(call compile-objects,$(bdir))))
+
+rebuild: clean all

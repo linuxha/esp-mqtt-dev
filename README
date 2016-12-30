@@ -1,0 +1,43 @@
+This code forms the basis of IOT modules using ESP8266. Developed on the unofficial programming
+environment for ESP8266 on Windows, this code includes TUANPMs MQTT software with minor changes
+and essentially allows MQTT or serial control of the ESP - which has inputs and outputs, will 
+handle both PWM and SERIAL RGB lights and so very much more - all documented in the .DOC file
+in this repository. See tech.scargill.net and the article "home control 2016".
+
+Essentially, without modification this should work on ESP-12 boards or any others 
+with 32Mb (4MB) Flash. See the doc file herein for more info. There now seems little point 
+in continuing to support the old ESP-01 - and moving to the larger chips allows for OTA programming
+which now works well, along with DUAL-SSID support.
+
+http://tech.scargill.net
+https://www.facebook.com/esp8266wifi
+https://twitter.com/scargill
+http://www.scargill.net
+http://www.bedrock.es
+http://www.hollyberry-cottage.co.uk
+https://plus.google.com/+PeterScargill
+
+The MIT License (MIT)
+
+Copyright (c) 2016 Peter Scargill and Aidan Ruff (pete@scargill.org, aidan@ruffs.net)
+(except for those parts of the code using software written by others, including Richard Burton,
+TUANPM (MQTT) and many others.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sub-license, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. MAY BE MADE IN ONE OR MORE OF THE FOLLOWING COUNTRIES. WILL NOT
+FADE IN THE WASH.
