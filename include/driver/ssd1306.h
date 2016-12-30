@@ -1,6 +1,8 @@
 #ifndef _SSD1306_H
 #define _SSD1306_H
-        
+
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #define BLACK 0
 #define WHITE 1
 #define INVERSE 2   

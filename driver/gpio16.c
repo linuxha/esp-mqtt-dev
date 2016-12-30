@@ -1,3 +1,5 @@
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #include "ets_sys.h"
 #include "osapi.h"
 #include "driver/gpio16.h"

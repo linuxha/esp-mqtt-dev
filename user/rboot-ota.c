@@ -6,9 +6,11 @@
 // OTA code based on SDK sample from Espressif.
 //////////////////////////////////////////////////
 
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #include <c_types.h>
 // Lots of complaints about ip
-#include <ip_addr.h>		// Hope this helps
+//#include <ip_addr.h>		// Hope this helps
 #include <user_interface.h>
 #include <espconn.h>
 #include <mem.h>

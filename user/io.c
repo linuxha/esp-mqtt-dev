@@ -8,6 +8,7 @@
  * ----------------------------------------------------------------------------
  */
 
+#include "espmissingincludes.h" // ncherry@linuxha.com
 
 #include "c_types.h"
 #include "user_interface.h"
@@ -15,7 +16,7 @@
 #include "mem.h"
 #include "osapi.h"
 #include "gpio.h"
-#include "espmissingincludes.h"
+//#include "espmissingincludes.h"
 #include "aidan_and_petes.h"
 
 #define LEDGPIO 2

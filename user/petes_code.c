@@ -5,7 +5,7 @@
 */
 
 #include "user_config.h"
-#include "aidan_and_petes.h"	// wsBitMask defined here but gives error on previous compiles ncherry@linuxha.com
+#include "aidan_and_petes.h"
 #include "petes.h"
 #include "easygpio/easygpio.h"
 
@@ -26,7 +26,8 @@ void IFA mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const
 void IFA mqtt_setup();
 void IFA mqtt_init();
 
-int16_t heartBeat = TICKS - 1; 	// ticks before forcing a reset
+//int16_t  heartBeat = TICKS - 1; 	// ticks before forcing a reset
+int16_t  heartBeat = 10; 	// ticks before forcing a reset - initially low.
 uint8_t connectStatus = 0; 			// i.e. what status are we in - do we need to connect MQTT etc?
 
 uint32_t quick_time=0;
@@ -173,7 +174,7 @@ static void IFA OtaUpdate_CallBack(bool result, uint8 rom_slot) {
 		// success
 		if (rom_slot == FLASH_BY_ADDR) {
 			iprintf(INFO, "Write Successful");
-			setFlashBack(INDIC_B_SUCCEEDED_OTA);		// Doesn't like this ncherry@linuxha.com
+			setFlashBack(INDIC_B_SUCCEEDED_OTA);
 		} else {
 			// set to boot new rom and then reboot
 			iprintf(INFO, "OTA succeeded to ROM %d", rom_slot);
@@ -440,7 +441,7 @@ uint16 read_rom_uint16(const uint8* addr) {
 	//x=&bytes;
 	//if (((uint32_t)addr) & 2) return (uint16)(x[2]*256+x[3]); else return (uint16)(x[0]*256+x[1]);
 	uint16_t *x;
-	x = (uint16_t *) (&bytes);
+	x=&bytes;
 	if (((uint32_t)addr) & 2) return (x[1]); else return (x[0]);
 }
 
@@ -530,7 +531,7 @@ if (structsize==fsiz)
 	if (first!=0xffffffff) good=1; else good=0;
 	spi_flash_read(flashoffs+flashStart+4+current,fbuf,(fsiz&0xfffffffc));
 	spi_flash_read(flashoffs+flashStart+4+current+(fsiz&0xfffffffc),&tmp,4);    //// CHECK
-	memcpy(fbuf+(fsiz&0xfffffffc),&tmp,(fsiz&3)); // move those last 1,3 or 3 bytes
+	os_memcpy(fbuf+(fsiz&0xfffffffc),&tmp,(fsiz&3)); // move those last 1,3 or 3 bytes
 	}
 
 return good;  // so you know if it is the first time or not.
@@ -2554,9 +2555,16 @@ void IFA mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const
 								*tokenPtr++ = *bufPtr++;
 								*tokenPtr = 0;
 							}
-							string2 = 1;
-							bufPtr++;
-							argCount++;
+							if (*bufPtr==0)
+							{
+								if (string2==1) *strValue2=0; else *strValue=0;
+							}
+							else
+							{
+								string2 = 1;
+								bufPtr++;
+								argCount++;
+							}
 							continue;
 						}
 						// wasn't a string if we got this far, it's a numerical argument
@@ -4014,7 +4022,21 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 					os_timer_arm(&ledTimer, arg4, 1);
 				}
 				ok();
-			}
+			  }
+
+
+			else if (os_strcmp(token,"rgbstore")==0)
+				{
+				os_memcpy(sysCfg.rgbPlayBuffer,rgbPlayBuffer,sizeof(rgbPlayBuffer));
+				doUpdate = 1; ok();
+				}
+
+			else if (os_strcmp(token,"rgbrecall")==0)
+				{
+				os_memcpy(rgbPlayBuffer,sysCfg.rgbPlayBuffer,sizeof(rgbPlayBuffer));
+				rgbPlayPtr = 0;
+			    ok();
+				}
 
 
 			else if (os_strcmp(token, "rgbstop") == 0) {
@@ -4064,17 +4086,20 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 			else if (os_strcmp(token, "out0") == 0) {
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out0Status == 0) ? "OFF" : "ON");
 				else {
-					if (arg1 == 6) { if (arg2 > 10002) out0Timer = arg2 - 10000; else out0Timer = arg2 * 60; }  else out0Timer=0;
-					if (arg1==-1) { if (sysCfg.out0Status) arg1=0; else arg1=1; } // toggle
-					if (sysCfg.out0Status != arg1) {
-						sysCfg.out0Status = arg1;
-						doUpdate = 1;
-					}
-					if (sysCfg.out0Status != 6)
+					if (arg1<7)
 					{
-						(sysCfg.invert & 1) ? easygpio_outputSet(sysCfg.relayoutput_override, ((sysCfg.out0Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(sysCfg.relayoutput_override, ((sysCfg.out0Status == 1) ? OUT_ON : OUT_OFF));
+						if (arg1 == 6) { if (arg2 > 10002) out0Timer = arg2 - 10000; else out0Timer = arg2 * 60; }  else out0Timer=0;
+						if (arg1==-1) { if (sysCfg.out0Status) arg1=0; else arg1=1; } // toggle
+						if (sysCfg.out0Status != arg1) {
+							sysCfg.out0Status = arg1;
+							doUpdate = 1;
+						}
+						if (sysCfg.out0Status != 6)
+						{
+							(sysCfg.invert & 1) ? easygpio_outputSet(sysCfg.relayoutput_override, ((sysCfg.out0Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(sysCfg.relayoutput_override, ((sysCfg.out0Status == 1) ? OUT_ON : OUT_OFF));
+						}
+						ok();
 					}
-					ok();
 				}
 			}
 
@@ -4082,34 +4107,40 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out2Status == 0) ? "OFF" : "ON");
 				else
 				{
-					if (arg1 == 6) { if (arg2 > 10002) out2Timer = arg2 - 10000; else out2Timer = arg2 * 60; }  else out2Timer=0;
-					if (arg1==-1) { if (sysCfg.out2Status) arg1=0; else arg1=1; } // toggle
-					if (sysCfg.out2Status != arg1) {
-						sysCfg.out2Status = arg1;
-						doUpdate = 1;
-					}
-					if (sysCfg.out2Status != 6)
+					if (arg1<7)
 					{
-						(sysCfg.invert & 2) ? easygpio_outputSet(2, ((sysCfg.out2Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(2, ((sysCfg.out2Status == 1) ? OUT_ON : OUT_OFF));
+						if (arg1 == 6) { if (arg2 > 10002) out2Timer = arg2 - 10000; else out2Timer = arg2 * 60; }  else out2Timer=0;
+						if (arg1==-1) { if (sysCfg.out2Status) arg1=0; else arg1=1; } // toggle
+						if (sysCfg.out2Status != arg1) {
+							sysCfg.out2Status = arg1;
+							doUpdate = 1;
+						}
+						if (sysCfg.out2Status != 6)
+						{
+							(sysCfg.invert & 2) ? easygpio_outputSet(2, ((sysCfg.out2Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(2, ((sysCfg.out2Status == 1) ? OUT_ON : OUT_OFF));
+						}
+						ok();
 					}
-					ok();
 				}
 			}
 
 			else if ((os_strcmp(token, "out4") == 0) && (sysCfg.serial2 == 0)) { // - chip pins reversed
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out5Status == 0) ? "OFF" : "ON");
 				else {
-					if (arg1 == 6) { if (arg2 > 10002) out5Timer = arg2 - 10000; else out5Timer = arg2 * 60; }  else out5Timer=0;
-					if (arg1==-1) { if (sysCfg.out5Status) arg1=0; else arg1=1; } // toggle
-					if (sysCfg.out5Status != arg1) {
-						sysCfg.out5Status = arg1;
-						doUpdate = 1;
-					}
-					if (sysCfg.out5Status != 6)
+					if (arg1<7)
 					{
-						(sysCfg.invert & 4) ? easygpio_outputSet(5, ((sysCfg.out5Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(5, ((sysCfg.out5Status == 1) ? OUT_ON : OUT_OFF));
+						if (arg1 == 6) { if (arg2 > 10002) out5Timer = arg2 - 10000; else out5Timer = arg2 * 60; }  else out5Timer=0;
+						if (arg1==-1) { if (sysCfg.out5Status) arg1=0; else arg1=1; } // toggle
+						if (sysCfg.out5Status != arg1) {
+							sysCfg.out5Status = arg1;
+							doUpdate = 1;
+						}
+						if (sysCfg.out5Status != 6)
+						{
+							(sysCfg.invert & 4) ? easygpio_outputSet(5, ((sysCfg.out5Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(5, ((sysCfg.out5Status == 1) ? OUT_ON : OUT_OFF));
+						}
+						ok();
 					}
-					ok();
 				}
 			}
 
@@ -4117,52 +4148,61 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out4Status == 0) ? "OFF" : "ON");
 				else
 				{
-					if (arg1 == 6) { if (arg2 > 10002) out4Timer = arg2 - 10000; else out4Timer = arg2 * 60; }  else out4Timer=0;
-					if (arg1==-1) { if (sysCfg.out4Status) arg1=0; else arg1=1; } // toggle
-					if (sysCfg.out4Status != arg1) {
-						sysCfg.out4Status = arg1;
+				if (arg1<7)
+				{
+						if (arg1 == 6) { if (arg2 > 10002) out4Timer = arg2 - 10000; else out4Timer = arg2 * 60; }  else out4Timer=0;
+						if (arg1==-1) { if (sysCfg.out4Status) arg1=0; else arg1=1; } // toggle
+						if (sysCfg.out4Status != arg1) {
+							sysCfg.out4Status = arg1;
 
-						doUpdate = 1;
-					}
-					if (sysCfg.out4Status != 6)
-					{
-						(sysCfg.invert & 8) ? easygpio_outputSet(4, ((sysCfg.out4Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(4, ((sysCfg.out4Status == 1) ? OUT_ON : OUT_OFF));
-					}
-					ok();
+							doUpdate = 1;
+						}
+						if (sysCfg.out4Status != 6)
+						{
+							(sysCfg.invert & 8) ? easygpio_outputSet(4, ((sysCfg.out4Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(4, ((sysCfg.out4Status == 1) ? OUT_ON : OUT_OFF));
+						}
+						ok();
+				 }
 				}
 			}
 
 			else if (os_strcmp(token, "out12") == 0) {
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out12Status == 0) ? "OFF" : "ON");
 				else {
-					if (arg1 == 6) { if (arg2 > 10002) out12Timer = arg2 - 10000; else out12Timer = arg2 * 60; } else out12Timer=0;
-					if (arg1==-1) { if (sysCfg.out12Status) arg1=0; else arg1=1; } // toggle
-					if (sysCfg.out12Status != arg1) {
-						sysCfg.out12Status = arg1;
-						doUpdate = 1;
-					}
-					if (sysCfg.out12Status != 6)
-					{
-						(sysCfg.invert & 16) ? easygpio_outputSet(12, ((sysCfg.out12Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(12, ((sysCfg.out12Status == 1) ? OUT_ON : OUT_OFF));
-					}
-					ok();
+				if (arg1<7)
+				   {
+						if (arg1 == 6) { if (arg2 > 10002) out12Timer = arg2 - 10000; else out12Timer = arg2 * 60; } else out12Timer=0;
+						if (arg1==-1) { if (sysCfg.out12Status) arg1=0; else arg1=1; } // toggle
+						if (sysCfg.out12Status != arg1) {
+							sysCfg.out12Status = arg1;
+							doUpdate = 1;
+						}
+						if (sysCfg.out12Status != 6)
+						{
+							(sysCfg.invert & 16) ? easygpio_outputSet(12, ((sysCfg.out12Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(12, ((sysCfg.out12Status == 1) ? OUT_ON : OUT_OFF));
+						}
+						ok();
+				   }
 				}
 			}
 
 			else if (os_strcmp(token, "out13") == 0)  {
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out13Status == 0) ? "OFF" : "ON");
 				else {
-					if (arg1 == 6) { if (arg2 > 10002) out13Timer = arg2 - 10000; else out13Timer = arg2 * 60; }  else out13Timer=0;
-					if (arg1==-1) { if (sysCfg.out13Status) arg1=0; else arg1=1; } // toggle
-					if (sysCfg.out13Status != arg1) {
-						sysCfg.out13Status = arg1;
-						doUpdate = 1;
-					}
-					if (sysCfg.out13Status != 6)
-					{
-						(sysCfg.invert & 32) ? easygpio_outputSet(13, ((sysCfg.out13Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(13, ((sysCfg.out13Status == 1) ? OUT_ON : OUT_OFF));
-					}
-					ok();
+				if (arg1<7)
+				   {
+						if (arg1 == 6) { if (arg2 > 10002) out13Timer = arg2 - 10000; else out13Timer = arg2 * 60; }  else out13Timer=0;
+						if (arg1==-1) { if (sysCfg.out13Status) arg1=0; else arg1=1; } // toggle
+						if (sysCfg.out13Status != arg1) {
+							sysCfg.out13Status = arg1;
+							doUpdate = 1;
+						}
+						if (sysCfg.out13Status != 6)
+						{
+							(sysCfg.invert & 32) ? easygpio_outputSet(13, ((sysCfg.out13Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(13, ((sysCfg.out13Status == 1) ? OUT_ON : OUT_OFF));
+						}
+						ok();
+				   }
 				}
 			}
 
@@ -4187,17 +4227,20 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 			else if (os_strcmp(token, "out14") == 0)  {
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out14Status == 0) ? "OFF" : "ON");
 				else {
-				   if (arg1 == 6) {
-					 if (arg2 > 10002) out14Timer = arg2 - 10000; else out14Timer = arg2 * 60; }
-					 else out14Timer=0;
-				   if (sysCfg.out14Status != arg1) {
-					 sysCfg.out14Status = arg1;
-					 doUpdate = 1;
-					 }
-				   if (sysCfg.out14Status != 6) {
-					(sysCfg.newInvert & 1) ? easygpio_outputSet(14, ((sysCfg.out14Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(14,   ((sysCfg.out14Status == 1) ? OUT_ON : OUT_OFF));
+				if (arg1<7)
+				   {
+					   if (arg1 == 6) {
+						 if (arg2 > 10002) out14Timer = arg2 - 10000; else out14Timer = arg2 * 60; }
+						 else out14Timer=0;
+					   if (sysCfg.out14Status != arg1) {
+						 sysCfg.out14Status = arg1;
+						 doUpdate = 1;
+						 }
+					   if (sysCfg.out14Status != 6) {
+						(sysCfg.newInvert & 1) ? easygpio_outputSet(14, ((sysCfg.out14Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(14,   ((sysCfg.out14Status == 1) ? OUT_ON : OUT_OFF));
+					   }
+					   ok();
 				   }
-				   ok();
 				}
 			}
 
@@ -4207,34 +4250,40 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 			else if (os_strcmp(token, "out15") == 0) {
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out15Status == 0) ? "OFF" : "ON");
 				else {
-					if (arg1 == 6) { if (arg2 > 10002) out15Timer = arg2 -= 10000; else out15Timer = arg2 * 60; }  else out15Timer=0;
-					if (arg1==-1) { if (sysCfg.out15Status) arg1=0; else arg1=1; } // toggle
-					if (sysCfg.out15Status != arg1) {
-						sysCfg.out15Status = arg1;
-						doUpdate = 1;
-					}
-					if (sysCfg.out15Status != 6)
-					{
-						(sysCfg.invert & 64) ? easygpio_outputSet(15, ((sysCfg.out15Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(15, ((sysCfg.out15Status == 1) ? OUT_ON : OUT_OFF));
-					}
-					ok();
+				if (arg1<7)
+				   {
+						if (arg1 == 6) { if (arg2 > 10002) out15Timer = arg2 -= 10000; else out15Timer = arg2 * 60; }  else out15Timer=0;
+						if (arg1==-1) { if (sysCfg.out15Status) arg1=0; else arg1=1; } // toggle
+						if (sysCfg.out15Status != arg1) {
+							sysCfg.out15Status = arg1;
+							doUpdate = 1;
+						}
+						if (sysCfg.out15Status != 6)
+						{
+							(sysCfg.invert & 64) ? easygpio_outputSet(15, ((sysCfg.out15Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(15, ((sysCfg.out15Status == 1) ? OUT_ON : OUT_OFF));
+						}
+						ok();
+				   }
 				}
 			}
 
 			else if (os_strcmp(token, "out16") == 0) {
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out16Status == 0) ? "OFF" : "ON");
 				else {
-					if (arg1 == 6) { if (arg2 > 10002) out16Timer = arg2 - 10000; else out16Timer = arg2 * 60; }  else out16Timer=0;
-					if (arg1==-1) { if (sysCfg.out16Status) arg1=0; else arg1=1; } // toggle
-					if (sysCfg.out16Status != arg1) {
-						sysCfg.out16Status = arg1;
-						doUpdate = 1;
-					}
-					if (sysCfg.out16Status != 6)
-					{
-						(sysCfg.invert & 128) ? easygpio_outputSet(16, ((sysCfg.out16Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(16, ((sysCfg.out16Status == 1) ? OUT_ON : OUT_OFF));
-					}
-					ok();
+				if (arg1<7)
+				   {
+						if (arg1 == 6) { if (arg2 > 10002) out16Timer = arg2 - 10000; else out16Timer = arg2 * 60; }  else out16Timer=0;
+						if (arg1==-1) { if (sysCfg.out16Status) arg1=0; else arg1=1; } // toggle
+						if (sysCfg.out16Status != arg1) {
+							sysCfg.out16Status = arg1;
+							doUpdate = 1;
+						}
+						if (sysCfg.out16Status != 6)
+						{
+							(sysCfg.invert & 128) ? easygpio_outputSet(16, ((sysCfg.out16Status == 1) ? OUT_OFF : OUT_ON)) :  easygpio_outputSet(16, ((sysCfg.out16Status == 1) ? OUT_ON : OUT_OFF));
+						}
+						ok();
+				   }
 				}
 			}
 
@@ -4395,7 +4444,8 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				}
 
 			else {
-				iprintf(RESPONSE, "Eh?\r\n");
+			     os_sprintf(strValue, "Did not understand %s\r\n",token);
+			     iprintf(RESPONSE, strValue);
 				os_sprintf(strValue, "Eh?");
 			}
 

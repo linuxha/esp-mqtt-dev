@@ -35,6 +35,8 @@
 #include <ctype.h>
 #include <math.h>
 #include <stddef.h>
+
+#include "espmissingincludes.h" // ncherry@linuxha.com
 #include "utils.h"
 
 

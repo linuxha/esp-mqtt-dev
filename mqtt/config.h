@@ -128,6 +128,15 @@ typedef struct{
     uint8_t out14Status;
     uint8_t newInvert;
 
+    uint8_t spare_A;
+    uint8_t spare_B;
+    uint8_t spare_C;
+    uint8_t spare_D;
+    uint8_t spare_E;
+    uint8_t spare_F;
+
+    int16_t rgbPlayBuffer[RGBMAX];
+
 } SYSCFG;
 
 typedef struct {

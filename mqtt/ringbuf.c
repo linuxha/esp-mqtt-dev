@@ -3,8 +3,9 @@
 *		Ring Buffer library
 */
 
-#include "ringbuf.h"
+#include "espmissingincludes.h" // ncherry@linuxha.com
 
+#include "ringbuf.h"
 
 /**
 * \brief init a RINGBUF object

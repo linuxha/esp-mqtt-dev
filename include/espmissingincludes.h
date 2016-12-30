@@ -12,9 +12,6 @@
 #define IRA     ICACHE_RODATA_ATTR
 #endif
 
-// ncherry@linuxha.com
-#if !defined(uint8)
-#if !defined(__uint8_t)
 typedef unsigned char       uint8;
 typedef unsigned char       u8;
 typedef signed char         sint8;
@@ -39,16 +36,10 @@ typedef double              real64;
 typedef uint8               uint8_t;
 typedef uint16              uint16_t;
 typedef uint32              uint32_t;
-#else
-typedef __uint8_t       uint8;
-typedef __uint16_t      uint16;
-typedef __uint32_t      uint32;
-typedef __uint8_t       uint8_t;
-typedef __uint16_t      uint16_t;
-typedef __uint32_t      uint32_t;
-#endif
-#endif
 
+typedef int8                int8_t;
+typedef short               int16_t;
+typedef int32               int32_t;
 #include <ets_sys.h>
 
 //Missing function prototypes in include folders. Gcc will warn on these if we don't define 'em anywhere.

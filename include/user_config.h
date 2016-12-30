@@ -21,7 +21,7 @@
 #define STA_TYPE AUTH_WPA2_PSK
 // Aidans webpage setup - END
 
-#define SYSTEM_VER "1.7.0"  // important as this shows up in {ver?} command
+#define SYSTEM_VER "1.7.2"  // important as this shows up in {ver?} command
 
 #define RGB_BUFFSIZE 900   // all down to RAM really - 300 LEDS max
 #define SERIAL_BUFFERS 128 // there are two of them - one temporary for building up strings

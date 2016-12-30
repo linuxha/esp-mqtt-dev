@@ -29,6 +29,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #include "easygpio/easygpio.h"
 #include "gpio.h"
 #include "osapi.h"

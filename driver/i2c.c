@@ -23,6 +23,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
  ********************************************************************************/
 
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #include "../include/driver/i2c.h"
 
 uint8 ICACHE_FLASH_ATTR i2c_check(uint8 device_addr) // return true if something there

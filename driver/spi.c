@@ -27,6 +27,7 @@
 // and GPIO15 is CS/SS
 //
 //
+#include "espmissingincludes.h" // ncherry@linuxha.com
 
 #include "driver/spi.h"
 #include "aidan_and_petes.h"

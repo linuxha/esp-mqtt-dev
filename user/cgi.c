@@ -12,6 +12,7 @@ flash as a binary. Also handles the hit counter on the main page.
  * ----------------------------------------------------------------------------
  */
 
+#include "espmissingincludes.h" // ncherry@linuxha.com
 
 #include <string.h>
 #include <osapi.h>
@@ -20,7 +21,7 @@ flash as a binary. Also handles the hit counter on the main page.
 #include "httpd.h"
 #include "cgi.h"
 #include <ip_addr.h>
-#include "espmissingincludes.h"
+//#include "espmissingincludes.h"
 #include <gpio.h>
 #include <config.h>
 

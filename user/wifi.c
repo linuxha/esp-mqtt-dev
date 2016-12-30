@@ -1,8 +1,10 @@
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #include "osapi.h"
 #include "user_interface.h"
 #include "user_config.h"
 #include "wifi.h"
-#include "espmissingincludes.h"
+//#include "espmissingincludes.h"
 
 extern int enable_debug_messages; // Needed by debug.h
 #include "debug.h"

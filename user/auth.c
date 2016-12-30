@@ -11,6 +11,7 @@ HTTP auth implementation. Only does basic authentication for now.
  * ----------------------------------------------------------------------------
  */
 
+#include "espmissingincludes.h" // ncherry@linuxha.com
 
 #include <string.h>
 #include <osapi.h>
@@ -21,7 +22,7 @@ HTTP auth implementation. Only does basic authentication for now.
 #include "auth.h"
 #include "base64.h"
 #include <ip_addr.h>
-#include "espmissingincludes.h"
+//#include "espmissingincludes.h"
 
 extern int enable_debug_messages; // Needed by debug.h
 #include "debug.h"

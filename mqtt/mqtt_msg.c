@@ -29,11 +29,13 @@
 *
 */
 
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #include <string.h>
 #include "mqtt_msg.h"
 #include <osapi.h>
 #include "user_config.h"
-#include "espmissingincludes.h"
+//#include "espmissingincludes.h"
 
 #define MQTT_MAX_FIXED_HEADER_SIZE 3
 

@@ -21,16 +21,20 @@ XTENSA_TOOLS_ROOT ?= $(ESPPATH)/xtensa-lx106-elf/bin
 #SDK_EXTRA_INCLUDES ?= $(ESPPATH)/xtensa-lx106-elf/xtensa-lx106-elf/include $(ESPPATH)/sdk/include ./include ./mqtt
 #SDK_EXTRA_INCLUDES ?= $(ESPPATH)/xtensa-lx106-elf/xtensa-lx106-elf/include ./include ./mqtt
 SDK_EXTRA_INCLUDES ?= $(ESPPATH)/sdk/include ./include ./mqtt ./rboot ./rboot/appcode ./easygpio/include ./softuart/include ./espfstest/include
-SDK_EXTRA_INCLUDES ?= /home/njc/dev/esp8266/esp-open-sdk/sdk/include/ $(SDK_EXTRA_INCLUDES)
-SDK_EXTRA_INCLUDES ?= /home/njc/dev/esp8266/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/ $(SDK_EXTRA_INCLUDES)
+#SDK_EXTRA_INCLUDES ?= /home/njc/dev/esp8266/esp-open-sdk/sdk/include/ $(SDK_EXTRA_INCLUDES)
+#SDK_EXTRA_INCLUDES ?= /home/njc/dev/esp8266/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/include/ $(SDK_EXTRA_INCLUDES)
 SDK_EXTRA_INCLUDES ?= /home/njc/dev/esp8266/esp-open-sdk/xtensa-lx106-elf/xtensa-lx106-elf/sysroot/usr/include/ $(SDK_EXTRA_INCLUDES)
-SDK_EXTRA_LIBS ?= $(ESPPATH)/xtensa-lx106-elf/xtensa-lx106-elf/arch/lib
+#
+#SDK_EXTRA_LIBS ?= $(ESPPATH)/xtensa-lx106-elf/xtensa-lx106-elf/arch/lib
+SDK_EXTRA_LIBS ?= $(ESPPATH)/xtensa-lx106-elf/xtensa-lx106-elf/lib
 
 # base directory of the ESP8266 SDK package, absolute
 #SDK_BASE	?= $(ESPPATH)/xtensa-lx106-elf/ESP8266_SDK
 SDK_BASE	?= $(ESPPATH)/sdk
+SDK_BASE	?= $(ESPPATH)/
 
 #Esptool.py path and port
+# There appear to be 3 different esptools. esptool-ck (c), esptool.py (Python) and esptool2 (c)
 ESPTOOL		?= esptool
 ESPPORT		?= /dev/ttyUSB0
 #ESPDELAY indicates seconds to wait between flashing the two binary images
@@ -53,9 +57,11 @@ LIBS		= gcc c hal phy pp net80211 wpa main lwip pwm
 
 # compiler flags using during compilation of source files
 #CFLAGS		= -Os -ggdb -std=c99 -Werror -Wpointer-arith -Wundef -Wall -Wl,-EL -fno-inline-functions \
-CFLAGS		= -Os -ggdb -std=c99 -Wpointer-arith -Wundef -Wall -Wl,-EL -fno-inline-functions \
-		-nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH \
-		-DLWIP_OPEN_SRC -Wno-address
+
+CFLAGS		= -Os -ggdb -std=c99 -Wpointer-arith -Wundef -Wall -Wl,-EL \
+		  -fno-inline-functions -nostdlib -mlongcalls \
+		  -mtext-section-literals  -D__ets__ -DICACHE_FLASH \
+		  -DLWIP_OPEN_SRC -Wno-address -DLINUX
 
 # linker flags used to generate the main object file
 LDFLAGS		= -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static -L$(SDK_EXTRA_LIBS)

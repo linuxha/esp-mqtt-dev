@@ -1,3 +1,5 @@
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #include "../include/driver/i2c.h"
 #include "aidan_and_petes.h"
 

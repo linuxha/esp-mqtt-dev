@@ -11,6 +11,7 @@ Cgi/template routines for the /wifi url.
  * ----------------------------------------------------------------------------
  */
 
+#include "espmissingincludes.h" // ncherry@linuxha.com
 
 #include "stdint.h"
 
@@ -23,7 +24,7 @@ extern int enable_debug_messages; // Needed by debug.h
 #include "mem.h"
 #include "httpd.h"
 #include "cgi.h"
-#include "espmissingincludes.h"
+//#include "espmissingincludes.h"
 
 #include "config.h"
 

@@ -13,7 +13,6 @@ It's written for use with httpd, but doesn't need to be used as such.
  * ----------------------------------------------------------------------------
  */
 
-
 //These routines can also be tested by comping them in with the espfstest tool. This
 //simplifies debugging, but needs some slightly different headers. The #ifdef takes
 //care of that.
@@ -23,12 +22,14 @@ It's written for use with httpd, but doesn't need to be used as such.
 #define __ets__ 1
 #ifdef __ets__
 //esp build
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #include "c_types.h"
 #include "user_interface.h"
 #include "espconn.h"
 #include "mem.h"
 #include "osapi.h"
-#include "espmissingincludes.h"
+//#include "espmissingincludes.h"
 #else
 //Test build
 #include <stdio.h>

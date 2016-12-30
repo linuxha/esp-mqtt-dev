@@ -27,9 +27,11 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
 */
+#include "espmissingincludes.h" // ncherry@linuxha.com
+
 #include "queue.h"
 
-#include "espmissingincludes.h"
+//#include "espmissingincludes.h"
 #include "ets_sys.h"
 
 #include "user_interface.h"
