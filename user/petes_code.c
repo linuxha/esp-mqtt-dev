@@ -19,7 +19,7 @@
 #include "softuart.h"
 #include "include/driver/spi.h"
 
-static uint8_t wsBitMask;	// needed to be added ncherry@linuxha.com
+static uint8_t wsBitMask;	// needed to be added ncherry@linuxha.com (add 6 lines)
 
 void IFA setFlashBack(uint8_t r, uint8_t g, uint8_t b, uint8_t duration);
 void IFA mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const char *data, uint32_t data_len);
@@ -4088,7 +4088,7 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				else {
 					if (arg1<7)
 					{
-						if (arg1 == 6) { if (arg2 > 10002) out0Timer = arg2 - 10000; else out0Timer = arg2 * 60; }  else out0Timer=0;
+						if (arg1 == 6) { if (arg2 > 10002) out2Timer = arg2 - 10000; else out2Timer = arg2 * 60; }  else if (out2Timer) out2Timer=1;
 						if (arg1==-1) { if (sysCfg.out0Status) arg1=0; else arg1=1; } // toggle
 						if (sysCfg.out0Status != arg1) {
 							sysCfg.out0Status = arg1;
@@ -4129,7 +4129,7 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				else {
 					if (arg1<7)
 					{
-						if (arg1 == 6) { if (arg2 > 10002) out5Timer = arg2 - 10000; else out5Timer = arg2 * 60; }  else out5Timer=0;
+						if (arg1 == 6) { if (arg2 > 10002) out5Timer = arg2 - 10000; else out5Timer = arg2 * 60; }  else if (out5Timer) out5Timer=1;
 						if (arg1==-1) { if (sysCfg.out5Status) arg1=0; else arg1=1; } // toggle
 						if (sysCfg.out5Status != arg1) {
 							sysCfg.out5Status = arg1;
@@ -4150,7 +4150,7 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				{
 				if (arg1<7)
 				{
-						if (arg1 == 6) { if (arg2 > 10002) out4Timer = arg2 - 10000; else out4Timer = arg2 * 60; }  else out4Timer=0;
+						if (arg1 == 6) { if (arg2 > 10002) out13Timer = arg2 - 10000; else out13Timer = arg2 * 60; }  else if (out13Timer) out13Timer=1;
 						if (arg1==-1) { if (sysCfg.out4Status) arg1=0; else arg1=1; } // toggle
 						if (sysCfg.out4Status != arg1) {
 							sysCfg.out4Status = arg1;
@@ -4171,7 +4171,7 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				else {
 				if (arg1<7)
 				   {
-						if (arg1 == 6) { if (arg2 > 10002) out12Timer = arg2 - 10000; else out12Timer = arg2 * 60; } else out12Timer=0;
+						if (arg1 == 6) { if (arg2 > 10002) out12Timer = arg2 - 10000; else out12Timer = arg2 * 60; } else if (out12Timer) out12Timer=1;
 						if (arg1==-1) { if (sysCfg.out12Status) arg1=0; else arg1=1; } // toggle
 						if (sysCfg.out12Status != arg1) {
 							sysCfg.out12Status = arg1;
@@ -4191,7 +4191,7 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				else {
 				if (arg1<7)
 				   {
-						if (arg1 == 6) { if (arg2 > 10002) out13Timer = arg2 - 10000; else out13Timer = arg2 * 60; }  else out13Timer=0;
+						if (arg1 == 6) { if (arg2 > 10002) out13Timer = arg2 - 10000; else out13Timer = arg2 * 60; }  else if (out13Timer) out13Timer=1;
 						if (arg1==-1) { if (sysCfg.out13Status) arg1=0; else arg1=1; } // toggle
 						if (sysCfg.out13Status != arg1) {
 							sysCfg.out13Status = arg1;
@@ -4230,8 +4230,9 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				if (arg1<7)
 				   {
 					   if (arg1 == 6) {
-						 if (arg2 > 10002) out14Timer = arg2 - 10000; else out14Timer = arg2 * 60; }
-						 else out14Timer=0;
+						 if (arg2 > 10002) out14Timer = arg2 - 10000; else out14Timer = arg2 * 60;
+					   }
+						 else if (out14Timer) out14Timer=1;
 					   if (sysCfg.out14Status != arg1) {
 						 sysCfg.out14Status = arg1;
 						 doUpdate = 1;
@@ -4251,8 +4252,8 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				if (isQuery) os_sprintf(strValue, "%s", (sysCfg.out15Status == 0) ? "OFF" : "ON");
 				else {
 				if (arg1<7)
-				   {
-						if (arg1 == 6) { if (arg2 > 10002) out15Timer = arg2 -= 10000; else out15Timer = arg2 * 60; }  else out15Timer=0;
+				    {
+						if (arg1 == 6) { if (arg2 > 10002) out15Timer = arg2 -= 10000; else out15Timer = arg2 * 60; }  else if (out15Timer) out15Timer=1;
 						if (arg1==-1) { if (sysCfg.out15Status) arg1=0; else arg1=1; } // toggle
 						if (sysCfg.out15Status != arg1) {
 							sysCfg.out15Status = arg1;
@@ -4272,7 +4273,7 @@ initLCD:	  						hitachiByte(0x30, 0); os_delay_us(38);
 				else {
 				if (arg1<7)
 				   {
-						if (arg1 == 6) { if (arg2 > 10002) out16Timer = arg2 - 10000; else out16Timer = arg2 * 60; }  else out16Timer=0;
+						if (arg1 == 6) { if (arg2 > 10002) out16Timer = arg2 - 10000; else out16Timer = arg2 * 60; }  else if (out16Timer) out16Timer=1;
 						if (arg1==-1) { if (sysCfg.out16Status) arg1=0; else arg1=1; } // toggle
 						if (sysCfg.out16Status != arg1) {
 							sysCfg.out16Status = arg1;
